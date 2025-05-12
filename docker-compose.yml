@@ -4,7 +4,14 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
     volumes:
-      - ./:/var/www/html
+      - ./:/var/www/html:cached  # Mode cached pour meilleures performances
+      - /var/www/html/var/cache  # Exclusion du cache Symfony
+      - /var/www/html/vendor     # Exclusion du dossier vendor
+    deploy:
+      resources:
+        limits:
+          cpus: '2'    # Allocation de 2 CPUs
+          memory: 1G   # Allocation de 1GB RAM
     depends_on:
       database:
         condition: service_healthy
@@ -15,6 +22,10 @@ services:
       MERCURE_URL: "http://mercure/.well-known/mercure"
       MERCURE_PUBLIC_URL: "http://localhost:3000/.well-known/mercure"
       MERCURE_JWT_SECRET: "${MERCURE_JWT_SECRET:-!ChangeThisMercureHubJWTSecretKey!}"
+      # Ajoutez ces variables pour optimiser PHP
+      PHP_OPCACHE_ENABLE: '1'
+      PHP_OPCACHE_VALIDATE_TIMESTAMPS: '0'  # Désactive en prod (mais gardez en dev)
+      APP_ENV: dev  # Force l'environnement de développement
 
   web:
     image: nginx:alpine
